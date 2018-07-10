@@ -1,5 +1,5 @@
 if (typeof define === 'function' && define.amd) {
-  define(['d3-array', 'd3-scale', 'd3-selection', 'd3-time'], function () {
+  define(['d3-array', 'd3-scale', 'd3-selection', 'd3-time', 'd3-time-format'], function () {
     'use strict';
 
     return calendarHeatmapMini;
@@ -14,8 +14,8 @@ var d3 = typeof require === 'function' ? Object.assign({},
   require('d3-array'),
   require('d3-scale'),
   require('d3-selection'),
-  require('d3-time')) : window.d3;
-var moment = typeof require === 'function' ? require('moment').default : window.moment;
+  require('d3-time'),
+  require('d3-time-format')) : window.d3;
 
 function calendarHeatmapMini() {
   // defaults
@@ -23,8 +23,8 @@ function calendarHeatmapMini() {
   var SQUARE_LENGTH = 12;
   var SQUARE_PADDING = 3;
   var MONTH_LABEL_PADDING = 10;
-  var now = moment().endOf('day').toDate();
-  var yearAgo = moment().startOf('day').subtract(1, 'year').toDate();
+  var now = d3.timeDay.ceil(new Date());
+  var yearAgo = d3.timeDay.offset(d3.timeYear.offset(now, -1), -1);
   var startDate = null;
   var data = [];
   var max = null;
@@ -34,9 +34,9 @@ function calendarHeatmapMini() {
   var legendEnabled = true;
   var singleSelection = true;
   var onClick = null;
+  var dateFormat = d3.timeFormat('%d-%m-%Y');
   var tooltipText = function tooltipText(d) {
-    var dateStr = moment(d).format('MM/DD/YY');
-    console.log(d);
+    var dateStr = dateFormat(d);
     var count = countForDate(d);
     return (count ? count.toLocaleString() : locale.No) + ' ' + pluralizedTooltipUnit(count) + ' ' + locale.on + ' ' + dateStr;
   };
@@ -72,7 +72,7 @@ function calendarHeatmapMini() {
   chart.startDate = function (value) {
     if (!arguments.length) { return startDate; }
     yearAgo = value;
-    now = moment(value).endOf('day').add(1, 'year').toDate();
+    now = d3.timeYear.offset(value, 1);
     return chart;
   };
 
@@ -129,8 +129,8 @@ function calendarHeatmapMini() {
     d3.select(chart.selector()).selectAll('svg.calendar-heatmap-mini').remove(); // remove the existing chart, if it exists
 
     var dateRange = d3.timeDays(yearAgo, now); // generates an array of date objects within the specified range
-    var monthRange = d3.timeMonths(moment(yearAgo).startOf('month').toDate(), now); // it ignores the first month if the 1st date is after the start of the month
-    var firstDate = moment(dateRange[0]);
+    var monthRange = d3.timeMonths(d3.timeMonth.floor(yearAgo), now); // it ignores the first month if the 1st date is after the start of the month
+    var firstDate = dateRange[0];
     // initialize data with 0 counts if there is none
     if (chart.data().length === 0) {
       var chartData = d3.timeDays(yearAgo, now).map(function (dateElement) {
@@ -167,9 +167,8 @@ function calendarHeatmapMini() {
         .attr('height', SQUARE_LENGTH)
         .attr('fill', function (d) { return color(countForDate(d)); })
         .attr('x', function (d, i) {
-          var cellDate = moment(d);
-          var result = cellDate.week() - firstDate.week() + (firstDate.weeksInYear() * (cellDate.weekYear() - firstDate.weekYear()));
-          return result * (SQUARE_LENGTH + SQUARE_PADDING);
+          var weekFromStart = d3.timeWeek.count(firstDate, d)
+          return weekFromStart * (SQUARE_LENGTH + SQUARE_PADDING);
         })
         .attr('y', function (d, i) {
           return MONTH_LABEL_PADDING + formatWeekday(d.getDay()) * (SQUARE_LENGTH + SQUARE_PADDING);
@@ -294,18 +293,14 @@ function calendarHeatmapMini() {
       }
 
       dayRects.exit().remove();
+      var dateStringRange = dateRange.map(d => d.toDateString());
       var monthLabels = svg.selectAll('.month')
         .data(monthRange)
         .enter()
         .append('text')
         .attr('class', 'month-name')
         .attr('x', function (d, i) {
-          var matchIndex = 0;
-          dateRange.find(function (element, index) {
-            matchIndex = index;
-            return moment(d).isSame(element, 'month') && moment(d).isSame(element, 'year');
-          });
-
+          var matchIndex = dateStringRange.indexOf(d.toDateString()) + 1;
           return Math.floor(matchIndex / 7) * (SQUARE_LENGTH + SQUARE_PADDING);
         })
         .attr('y', 0)  // fix these to the top
@@ -351,7 +346,7 @@ function calendarHeatmapMini() {
   function countForDate(d) {
     var count = 0;
     var match = chart.data().find(function (element, index) {
-      return moment(element.date).isSame(d, 'day');
+      return d3.timeDay.floor(d).getTime() == d3.timeDay.floor(element.date).getTime();
     });
     if (match) {
       count = match.count;
