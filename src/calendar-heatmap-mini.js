@@ -34,6 +34,12 @@ function calendarHeatmapMini() {
   var legendEnabled = true;
   var singleSelection = true;
   var onClick = null;
+  var tooltipText = function tooltipText(d) {
+    var dateStr = moment(d).format('MM/DD/YY');
+    console.log(d);
+    var count = countForDate(d);
+    return (count ? count.toLocaleString() : locale.No) + ' ' + pluralizedTooltipUnit(count) + ' ' + locale.on + ' ' + dateStr;
+  };
   var weekStart = 0; //0 for Sunday, 1 for Monday
   var locale = {
     months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -97,6 +103,12 @@ function calendarHeatmapMini() {
   chart.onClick = function (value) {
     if (!arguments.length) { return onClick(); }
     onClick = value;
+    return chart;
+  };
+
+  chart.tooltipText = function (value) {
+    if (!arguments.length) { return tooltipText; }
+    tooltipText = value;
     return chart;
   };
 
@@ -193,7 +205,7 @@ function calendarHeatmapMini() {
               .on('mouseover', function (d, i) {
                 var x = parseInt(this.getAttribute('x'));
                 var y = parseInt(this.getAttribute('y')) - SQUARE_PADDING;
-                var tooltipLabel = tooltipText(d);
+                var tooltipLabel = chart.tooltipText()(d);
 
                 // append an invisible svg text element for pre-calculating width
                 dummyTooltip = svg.append('text')
@@ -314,38 +326,6 @@ function calendarHeatmapMini() {
       });
     }
 
-    function pluralizedTooltipUnit(count) {
-      if ('string' === typeof tooltipUnit) {
-        return (tooltipUnit + (count === 1 ? '' : 's'));
-      }
-      for (var i in tooltipUnit) {
-        var _rule = tooltipUnit[i];
-        var _min = _rule.min;
-        var _max = _rule.max || _rule.min;
-        _max = _max === 'Infinity' ? Infinity : _max;
-        if (count >= _min && count <= _max) {
-          return _rule.unit;
-        }
-      }
-    }
-
-    function tooltipText(d) {
-      var dateStr = moment(d).format('MM/DD/YY');
-      var count = countForDate(d);
-      return (count ? count.toLocaleString() : locale.No) + ' ' + pluralizedTooltipUnit(count) + ' ' + locale.on + ' ' + dateStr;
-    }
-
-    function countForDate(d) {
-      var count = 0;
-      var match = chart.data().find(function (element, index) {
-        return moment(element.date).isSame(d, 'day');
-      });
-      if (match) {
-        count = match.count;
-      }
-      return count;
-    }
-
     function formatWeekday(weekDay) {
       if (weekStart === 1) {
         if (weekDay === 0) {
@@ -366,6 +346,32 @@ function calendarHeatmapMini() {
     }).attr('fill', function (d, i) {
       return color(chart.data()[i].count);
     });
+  }
+
+  function countForDate(d) {
+    var count = 0;
+    var match = chart.data().find(function (element, index) {
+      return moment(element.date).isSame(d, 'day');
+    });
+    if (match) {
+      count = match.count;
+    }
+    return count;
+  }  
+
+  function pluralizedTooltipUnit(count) {
+    if ('string' === typeof tooltipUnit) {
+      return (tooltipUnit + (count === 1 ? '' : 's'));
+    }
+    for (var i in tooltipUnit) {
+      var _rule = tooltipUnit[i];
+      var _min = _rule.min;
+      var _max = _rule.max || _rule.min;
+      _max = _max === 'Infinity' ? Infinity : _max;
+      if (count >= _min && count <= _max) {
+        return _rule.unit;
+      }
+    }
   }
 
   return chart;
