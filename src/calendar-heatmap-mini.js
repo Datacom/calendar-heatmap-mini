@@ -15,7 +15,7 @@ var d3 = typeof require === 'function' ? Object.assign({},
   require('d3-scale'),
   require('d3-selection'),
   require('d3-time')) : window.d3;
-var moment = typeof require === 'function' ? require('moment') : window.moment;
+var moment = typeof require === 'function' ? require('moment').default : window.moment;
 
 function calendarHeatmapMini() {
   // defaults
@@ -357,7 +357,7 @@ function calendarHeatmapMini() {
       count = match.count;
     }
     return count;
-  }  
+  }
 
   function pluralizedTooltipUnit(count) {
     if ('string' === typeof tooltipUnit) {
