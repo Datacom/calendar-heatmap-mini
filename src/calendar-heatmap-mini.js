@@ -25,7 +25,6 @@ function calendarHeatmapMini() {
   var MONTH_LABEL_PADDING = 10;
   var now = d3.timeDay.ceil(new Date());
   var yearAgo = d3.timeDay.offset(d3.timeYear.offset(now, -1), -1);
-  var startDate = null;
   var data = [];
   var max = null;
   var colorRange = ['#D8E6E7', '#218380'];
@@ -70,11 +69,15 @@ function calendarHeatmapMini() {
   };
 
   chart.startDate = function (value) {
-    if (!arguments.length) { return startDate; }
+    if (!arguments.length) { return yearAgo; }
     yearAgo = value;
     now = d3.timeYear.offset(value, 1);
     return chart;
   };
+
+  chart.endDate = function() {
+    return now;
+  }
 
   chart.colorRange = function (value) {
     if (!arguments.length) { return colorRange; }
