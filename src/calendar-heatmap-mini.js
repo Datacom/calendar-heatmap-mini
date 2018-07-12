@@ -56,6 +56,12 @@ function calendarHeatmapMini() {
     return chart;
   };
 
+  chart.dateFormat = function (value) {
+    if (!arguments.length) { return dateFormat; }
+    dateFormat = value;
+    return chart;
+  };
+
   chart.max = function (value) {
     if (!arguments.length) { return max; }
     max = value;
