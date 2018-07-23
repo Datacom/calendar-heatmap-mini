@@ -34,6 +34,7 @@ function calendarHeatmapMini() {
   var singleSelection = true;
   var onClick = null;
   var dateFormat = d3.timeFormat('%d-%m-%Y');
+  var splitMonths = false;
   var tooltipText = function tooltipText(d) {
     var dateStr = dateFormat(d);
     var count = countForDate(d);
@@ -53,6 +54,12 @@ function calendarHeatmapMini() {
   chart.data = function (value) {
     if (!arguments.length) { return data; }
     data = value;
+    return chart;
+  };
+
+  chart.splitMonths = function (value) {
+    if (!arguments.length) { return splitMonths; }
+    splitMonths = value;
     return chart;
   };
 
@@ -164,7 +171,10 @@ function calendarHeatmapMini() {
         .style('position', 'relative')
         .append('svg')
         .attr('class', 'calendar-heatmap-mini')
-        .attr('viewBox', legendEnabled ? '-15 -15 825 160' : '-15 -15 825 135')
+        .attr('viewBox', splitMonths ?
+          (legendEnabled ? '-15 -15 1005 160' : '-15 -15 1005 135') :
+          (legendEnabled ? '-15 -15 825 160' : '-15 -15 825 135')
+        )
 
       dayRects = svg.selectAll('.day-cell')
         .data(dateRange); // array of days for the last yr
@@ -177,6 +187,10 @@ function calendarHeatmapMini() {
         .attr('fill', function (d) { return color(countForDate(d)); })
         .attr('x', function (d, i) {
           var weekFromStart = d3.timeWeek.count(firstDate, d)
+          if(splitMonths) {
+            weekFromStart += d3.timeMonth.count(firstDate, d);
+          }
+
           return weekFromStart * (SQUARE_LENGTH + SQUARE_PADDING);
         })
         .attr('y', function (d, i) {
@@ -310,7 +324,11 @@ function calendarHeatmapMini() {
         .attr('class', 'month-name')
         .attr('x', function (d, i) {
           var matchIndex = dateStringRange.indexOf(d.toDateString()) + 1;
-          return Math.floor(matchIndex / 7) * (SQUARE_LENGTH + SQUARE_PADDING);
+          var col = Math.floor(matchIndex / 7);
+          if(splitMonths) {
+            col += d3.timeMonth.count(firstDate, d);
+          }
+          return col * (SQUARE_LENGTH + SQUARE_PADDING);
         })
         .attr('y', 0)  // fix these to the top
         .text(function (d) {
