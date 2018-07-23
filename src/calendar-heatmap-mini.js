@@ -81,6 +81,13 @@ function calendarHeatmapMini() {
     return chart;
   };
 
+  chart.select = function(s) {
+    return d3.select(chart.selector()).select(s);
+  }
+  chart.selectAll = function(s) {
+    return d3.select(chart.selector()).selectAll(s);
+  }
+
   chart.startDate = function (value) {
     if (!arguments.length) { return yearAgo; }
     yearAgo = value;
