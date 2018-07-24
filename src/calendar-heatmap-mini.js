@@ -331,7 +331,7 @@ function calendarHeatmapMini() {
         .attr('class', 'month-name')
         .attr('x', function (d, i) {
           var matchIndex = dateStringRange.indexOf(d.toDateString()) + 1;
-          var col = Math.floor(matchIndex / 7);
+          var col = Math.floor((matchIndex + firstDate.getDay() - 1) / 7);
           if(splitMonths) {
             col += d3.timeMonth.count(firstDate, d);
           }
