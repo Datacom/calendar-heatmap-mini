@@ -323,7 +323,7 @@ function calendarHeatmapMini() {
       }
 
       dayRects.exit().remove();
-      var dateStringRange = dateRange.map((d)=> d.toDateString());
+      var dateStringRange = dateRange.map(function(d){ return d.toDateString()});
       var monthLabels = svg.selectAll('.month')
         .data(monthRange)
         .enter()
